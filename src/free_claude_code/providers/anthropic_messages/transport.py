@@ -38,6 +38,11 @@ from free_claude_code.providers.admission import (
     ProviderExecution,
     ProviderOperationKind,
 )
+from free_claude_code.providers.continuation import (
+    ContinuationRequest,
+    SourceRecoveryState,
+    public_recovery,
+)
 from free_claude_code.providers.endpoint import RequestEndpoint
 from free_claude_code.providers.endpoint_types import EndpointContext
 from free_claude_code.providers.failure_policy import (
@@ -275,13 +280,16 @@ class AnthropicMessagesTransport:
             execution, endpoint=request_endpoint, stream=recovery
         )
         corrections = RequestCorrections("messages", reasoning_correction)
+        continuation_request = ContinuationRequest("messages")
+        operation_kind = ProviderOperationKind.GENERATION
         while execution.can_attempt:
             normal_stop_seen = False
+            source = SourceRecoveryState(execution)
             scope: ProviderAttemptScope | None = None
             stream_opened = False
             sent_body = body
             try:
-                attempt = await execution.open_attempt(ProviderOperationKind.GENERATION)
+                attempt = await execution.open_attempt(operation_kind)
                 scope = ProviderAttemptScope(
                     attempt,
                     provider_name=self._provider_name,
@@ -336,6 +344,11 @@ class AnthropicMessagesTransport:
                 async for event_type, payload in messages_events(response):
                     normal_stop_seen |= is_messages_stop(event_type, payload)
                     check_messages_failure(event_type, payload)
+                    source.observe(
+                        "messages",
+                        payload,
+                        continuing=operation_kind is ProviderOperationKind.CONTINUATION,
+                    )
                     output = presenter.feed(event_type, payload)
                     if event_type != "ping" and not attempt.accepted:
                         await attempt.accept()
@@ -373,7 +386,7 @@ class AnthropicMessagesTransport:
                         status,
                         scope.attempt,
                         body,
-                        operation_kind=ProviderOperationKind.GENERATION,
+                        operation_kind=operation_kind,
                         normal_stop_seen=normal_stop_seen,
                         propose_correction=partial(
                             corrections.next_body,
@@ -411,6 +424,24 @@ class AnthropicMessagesTransport:
                 )
                 if decision.action is RecoveryFailureAction.EARLY_RETRY:
                     recovery.discard()
+                    continue
+                if scope is not None:
+                    await scope.aclose(active_error=error)
+                recovered = public_recovery(
+                    execution,
+                    body=body,
+                    request=continuation_request,
+                    retryable=decision.retryable,
+                    normal_stop_seen=normal_stop_seen,
+                    source=source,
+                )
+                if recovered is not None:
+                    recovery.discard()
+                    if recovered.body is None:
+                        return
+                    body = recovered.body
+                    operation_kind = ProviderOperationKind.CONTINUATION
+                    corrections = RequestCorrections("messages", reasoning_correction)
                     continue
                 failure = classify_provider_failure(
                     error,

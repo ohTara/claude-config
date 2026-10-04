@@ -42,6 +42,11 @@ from free_claude_code.providers.admission import (
     ProviderExecution,
     ProviderOperationKind,
 )
+from free_claude_code.providers.continuation import (
+    ContinuationRequest,
+    SourceRecoveryState,
+    public_recovery,
+)
 from free_claude_code.providers.endpoint import RequestEndpoint
 from free_claude_code.providers.endpoint_types import EndpointContext
 from free_claude_code.providers.failure_policy import (
@@ -155,13 +160,14 @@ class OpenAIResponsesTransport:
             extra_headers=dict(extra_headers or {}),
             request_id=request_id,
             response_model=response_model,
-            presenter_factory=lambda: MessagesResponsesPresenter(
+            presenter_factory=lambda pad_empty: MessagesResponsesPresenter(
                 ResponsesProviderStream(
                     message_id=message_id,
                     model=response_model,
                     input_tokens=input_tokens,
                     tool_names=tool_names,
                     log_raw_events=self._log_raw_sse_events,
+                    pad_empty=pad_empty,
                 )
             ),
         )
@@ -185,7 +191,7 @@ class OpenAIResponsesTransport:
             extra_headers=dict(extra_headers or {}),
             request_id=request_id,
             response_model=response_model,
-            presenter_factory=lambda: NativeResponsesPresenter(
+            presenter_factory=lambda _pad_empty: NativeResponsesPresenter(
                 public_model=response_model, tool_events=tools.event_adapter()
             ),
         )
@@ -318,6 +324,8 @@ class OpenAIResponsesTransport:
             execution, endpoint=endpoint, stream=recovery
         )
         corrections = RequestCorrections("responses", reasoning_correction)
+        continuation_request = ContinuationRequest("responses")
+        operation_kind = ProviderOperationKind.GENERATION
         trace_event(
             stage="provider",
             event="provider.request.sent",
@@ -332,7 +340,10 @@ class OpenAIResponsesTransport:
 
         while execution.can_attempt:
             normal_stop_seen = False
-            presenter = presenter_factory()
+            source = SourceRecoveryState(execution)
+            presenter = presenter_factory(
+                operation_kind is ProviderOperationKind.GENERATION
+            )
             start_events = tuple(presenter.start())
             presenter_started = False
             adapt_event = (
@@ -357,7 +368,7 @@ class OpenAIResponsesTransport:
                     endpoint=endpoint.snapshot if endpoint is not None else None,
                 )
                 sent_body = prepare_history(body, origin)
-                attempt = await execution.open_attempt(ProviderOperationKind.GENERATION)
+                attempt = await execution.open_attempt(operation_kind)
                 scope = ProviderAttemptScope(
                     attempt,
                     provider_name=self._provider_name,
@@ -388,11 +399,23 @@ class OpenAIResponsesTransport:
                         JsonObject,
                         upstream_event.to_dict(mode="json"),
                     )
-                    if upstream_event.type in {
+                    failed = upstream_event.type in {
                         "response.failed",
                         "error",
                         "response.error",
-                    }:
+                    }
+                    context_exceeded = reports_context_window_incomplete(
+                        upstream_event.type, payload
+                    )
+                    # Failed snapshots constrain recovery without replacing the
+                    # provider's own error with an output-eligibility failure.
+                    source.observe(
+                        "responses",
+                        payload,
+                        continuing=operation_kind is ProviderOperationKind.CONTINUATION
+                        and not (failed or context_exceeded),
+                    )
+                    if failed:
                         stream_failure = responses_stream_failure_from_event(
                             upstream_event.type,
                             payload,
@@ -408,10 +431,7 @@ class OpenAIResponsesTransport:
                                 # cannot retain a consistent public identity.
                                 stream_failure.payload = None
                         raise stream_failure
-                    if reports_context_window_incomplete(
-                        upstream_event.type,
-                        payload,
-                    ):
+                    if context_exceeded:
                         raise context_window_exceeded_provider_failure()
                     if adapt_event is not None:
                         payload = adapt_event(upstream_event.type, payload)
@@ -453,7 +473,7 @@ class OpenAIResponsesTransport:
                         provider_authentication_status(error),
                         scope.attempt,
                         body,
-                        operation_kind=ProviderOperationKind.GENERATION,
+                        operation_kind=operation_kind,
                         normal_stop_seen=normal_stop_seen,
                         propose_correction=partial(
                             corrections.next_body,
@@ -502,6 +522,25 @@ class OpenAIResponsesTransport:
                         request_id=request_id,
                         execution=execution,
                     )
+                    continue
+
+                if scope is not None:
+                    await scope.aclose(active_error=error)
+                recovered = public_recovery(
+                    execution,
+                    body=body,
+                    request=continuation_request,
+                    retryable=decision.retryable,
+                    normal_stop_seen=normal_stop_seen,
+                    source=source,
+                )
+                if recovered is not None:
+                    recovery.discard()
+                    if recovered.body is None:
+                        return
+                    body = recovered.body
+                    operation_kind = ProviderOperationKind.CONTINUATION
+                    corrections = RequestCorrections("responses", reasoning_correction)
                     continue
 
                 failure = classify_provider_failure(
