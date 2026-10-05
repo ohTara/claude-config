@@ -105,7 +105,6 @@ class PublicResponseStream(AsyncIterator[str]):
         except (Exception, BaseExceptionGroup) as exc:
             self._done = True
             self._pending_starts.clear()
-            self._tools = ToolCallBuffer(self._wire_api)
             failure = find_execution_failure(exc) or exc
             if self._terminal_frame is None:
                 raise
@@ -114,6 +113,9 @@ class PublicResponseStream(AsyncIterator[str]):
             frame = self._terminal_frame(
                 self.start_frame or self._initial_chunk, self._latest_chunk, failure
             )
+            # Filter with the failing attempt's call identities before discarding it.
+            (frame,) = self._tools.feed(frame)
+            self._tools = ToolCallBuffer(self._wire_api)
             frame = self._finalize_frame(frame)
             return self._publish(frame, synthetic=True) or frame
 
@@ -262,7 +264,7 @@ class PublicResponseStream(AsyncIterator[str]):
             self._delivered.unsafe_reason = "unknown_event"
 
     def _publish(self, frame: str, *, synthetic: bool = False) -> str | None:
-        """Normalize only a replacement envelope and mark actually released frames."""
+        """Keep replacement and failure envelopes in the public response lifecycle."""
         payload = frame_data(frame)
         if payload is None:
             if any(
@@ -298,7 +300,8 @@ class PublicResponseStream(AsyncIterator[str]):
                     self._created_at = value.get("created_at")
 
         changed = False
-        if self._replacement and self._wire_api == "responses":
+        failure = kind == "response.failed"
+        if (self._replacement or failure) and self._wire_api == "responses":
             response = payload.get("response")
             if isinstance(response, dict):
                 if (
@@ -321,8 +324,12 @@ class PublicResponseStream(AsyncIterator[str]):
                 payload["response_id"] = self._public_id
                 changed = True
         number = payload.get("sequence_number")
+        if failure:
+            number = self._sequence + 1
+            payload["sequence_number"] = number
+            changed = True
         if isinstance(number, int) and not isinstance(number, bool):
-            if self._replacement:
+            if self._replacement and not failure:
                 if self._offset is None:
                     self._offset = max(0, self._sequence + 1 - number)
                 if self._offset:
