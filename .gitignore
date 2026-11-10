@@ -1,0 +1,19 @@
+# Cache e runtime Claude Code
+.cache/
+.daemon/
+daemon/
+backups/
+file-history/
+*.pid
+*.log
+*.lock
+control.key
+pty-pids/
+roster.json
+
+# Credenziali
+.credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
