@@ -17,13 +17,11 @@ Configurazione personale per [Claude Code](https://claude.com/claude-code) — s
 
 ## Contenuto
 
-## Contenuto
-
 ```
 .claude/
 ├── CLAUDE.md              # Istruzioni globali (override default behavior)
 ├── RTK.md                 # Rust Token Killer - CLI proxy per risparmio token
-├── install-popos.sh       # Setup completo ambiente Dev/Cloud su Pop!_OS
+├── install-popos.sh       # Setup completo ambiente Dev/Cloud su Pop!_OS (+ 18 repo extra)
 └── projects/
     └── C--Users-luca-tarallo/
         └── memory/
@@ -32,6 +30,27 @@ Configurazione personale per [Claude Code](https://claude.com/claude-code) — s
             ├── configurazione-homeserver.md   # ASUS Vivobook headless: SSH, UFW, fail2ban, Samba, Jellyfin, Minecraft
             └── guida-sistema-e-troubleshooting.md  # Diagnostica accesso Jellyfin, Podman logs, Samba
 ```
+
+## Repo extra clonati da `install-popos.sh` (in `~/claude-repos/`)
+
+1. [my-claude-code-setup](https://github.com/centminmod/my-claude-code-setup.git)
+2. [claude-code-setup](https://github.com/rse/claude-code-setup.git)
+3. [Reach](https://github.com/alexandrosnt/Reach.git)
+4. [claude-mem](https://github.com/thedotmack/claude-mem.git)
+5. [strix](https://github.com/usestrix/strix.git)
+6. [multica](https://github.com/multica-ai/multica.git)
+7. [Agent-Reach](https://github.com/Panniantong/Agent-Reach.git)
+8. [SkillSpector](https://github.com/NVIDIA/SkillSpector.git)
+9. [ruflo](https://github.com/ruvnet/ruflo.git)
+10. [OpenJarvis](https://github.com/open-jarvis/OpenJarvis.git)
+11. [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills.git)
+12. [claude-octopus](https://github.com/nyldn/claude-octopus.git)
+13. [graphify](https://github.com/Graphify-Labs/graphify.git)
+14. [superpowers](https://github.com/obra/superpowers.git)
+15. [craft-anything](https://github.com/storytold/craft-anything.git)
+16. [ponytail](https://github.com/DietrichGebert/ponytail.git)
+17. [freellmapi](https://github.com/tashfeenahmed/freellmapi.git)
+18. [lemo-opuscar](https://github.com/lemomo-ai/lemo-opuscar.git)
 
 ## Setup rapido
 
