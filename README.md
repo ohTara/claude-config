@@ -132,4 +132,104 @@ helm version --short
 
 ---
 
+## 🎮 Minecraft Server (PaperMC + Geyser)
+
+Installazione completa per **Java + Bedrock cross-play**, 30 giocatori, vanilla+modded, esposto via Tailscale.
+
+### Avvio rapido
+
+```bash
+cd ~/.claude
+chmod +x install-mc-server.sh
+./install-mc-server.sh
+```
+
+### Cosa installa
+
+- **PaperMC 1.21.11** (build 34) — fork ad alte prestazioni
+- **Geyser + Floodgate** — Bedrock cross-play (nessun account Java necessario)
+- **ViaVersion/ViaRewind/ViaBackwards** — supporto client 1.8–1.21.x
+- **EssentialsX** (Core, Chat, Spawn) — comandi base, home, spawn, economy
+- **Spark** — profiler performance integrato
+- **WorldEdit** — world editing (opzionale, richiede Java 25+ per build recenti)
+- **LuckPerms / CoreProtect** — opzionali, installazione manuale
+
+### Configurazione sistema
+
+| Componente | Dettagli |
+|---|---|
+| **RAM** | 6 GB heap (Aikar G1GC flags) |
+| **Java** | OpenJDK 21 (headless) |
+| **Servizio** | systemd user service (`mc-server`) |
+| **Backup** | Script `mc-backup` con rotazione + rclone (local + cloud) |
+| **Rete** | Porta 25565 (Java) + 19132 UDP (Bedrock), Tailscale auto |
+| **Online mode** | `false` (offline/insecure — cambia in server.properties) |
+
+### Comandi (alias in `~/.bashrc`)
+
+```bash
+mc-start        # Avvia server
+mc-stop         # Ferma server (graceful, 60s timeout)
+mc-restart      # Riavvia
+mc-status       # Stato systemd
+mc-logs         # Log live (journalctl)
+mc-console      # Console interattiva (rcon via screen/tmux)
+mc-backup       # Backup manuale (world + config + plugins)
+mc-backup-list  # Lista backup locali
+mc-version      # Versione PaperMC
+```
+
+### Tailscale / Accesso remoto
+
+```bash
+# Dopo install, Tailscale si connette automaticamente
+tailscale up
+tailscale ip -4  # Mostra IP per connessione Bedrock/Java
+
+# Condividi IP con amici → si connettono via Tailscale IP:25565 (Java) o :19132 (Bedrock)
+```
+
+### Backup & Restore
+
+```bash
+# Backup automatico: cron giornaliero alle 03:00 (vedi mc-backup script)
+# Backup manuale:
+mc-backup
+
+# Restore:
+# 1. mc-stop
+# 2. Estrai backup in ~/minecraft-server/
+# 3. mc-start
+
+# Cloud backup (configura rclone remote):
+rclone config  # Crea remote "mc-backups"
+# Lo script usa rclone copy ~/minecraft-server/backups/ mc-backups:minecraft/
+```
+
+### Plugin opzionali (installazione manuale)
+
+```bash
+cd ~/minecraft-server/plugins
+
+# LuckPerms (permessi avanzati)
+wget https://download.luckperms.net/1685/bukkit/loader/LuckPerms-Bukkit-5.4.130.jar
+
+# CoreProtect (rollback/protezione)
+wget https://ci.coreprotect.net/job/CoreProtect/lastSuccessfulBuild/artifact/target/CoreProtect-*-SNAPSHOT.jar
+
+# Poi: mc-restart
+```
+
+### Troubleshooting
+
+| Problema | Soluzione |
+|---|---|
+| Server crash all'avvio | `journalctl --user -u mc-server -f` |
+| Geyser "zip file closed" | Bug noto restart race condition → `mc-restart` risolve |
+| WorldEdit error Java version | Build recente richiede Java 25+ → usa build compatibile o rimuovi |
+| Bedrock non connette | Verifica porta 19132 UDP + Tailscale IP corretto |
+| Lag / TPS basso | `mc-console` → `spark profiler --timeout 60` → analizza report |
+
+---
+
 **Licenza:** Uso personale — niente segreti/chiavi in repo (usa variabili d'ambiente o keyring).

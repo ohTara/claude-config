@@ -35,17 +35,22 @@ mkdir -p "$MC_DIR"/{plugins,world,backups,config}
 cd "$MC_DIR"
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Scarica PaperMC (latest build per latest version)
+# Scarica PaperMC (latest build per latest version) — usa fill.papermc.io/v3
 log "Scarico PaperMC..."
 if [[ "$MC_VERSION" == "latest" ]]; then
-  # API PaperMC: trova ultima versione MC e ultimo build
-  MC_VERSION=$(curl -s https://api.papermc.io/v2/projects/paper | jq -r '.versions[-1]')
-  BUILD=$(curl -s "https://api.papermc.io/v2/projects/paper/versions/$MC_VERSION" | jq -r '.builds[-1]')
+  # Trova l'ultima versione MC stabile (es. 1.21.11, no rc/pre)
+  MC_VERSION=$(curl -s "https://fill.papermc.io/v3/projects/paper" -H "Accept: application/json" \
+    | jq -r '.versions["1.21"][] | select(test("^1\\.21\\.[0-9]+$")) | select(test("rc|pre") | not)' | head -1)
+  # Per quella versione, trova l'ultimo build
+  BUILD=$(curl -s "https://fill.papermc.io/v3/projects/paper/versions/$MC_VERSION" -H "Accept: application/json" | jq -r '.builds[-1]')
 else
-  BUILD=$(curl -s "https://api.papermc.io/v2/projects/paper/versions/$MC_VERSION" | jq -r '.builds[-1]')
+  BUILD=$(curl -s "https://fill.papermc.io/v3/projects/paper/versions/$MC_VERSION" -H "Accept: application/json" | jq -r '.builds[-1]')
 fi
+
+# Ottieni URL di download dal build info
 JAR_NAME="paper-${MC_VERSION}-${BUILD}.jar"
-JAR_URL="https://api.papermc.io/v2/projects/paper/versions/$MC_VERSION/builds/$BUILD/downloads/$JAR_NAME"
+DOWNLOAD_INFO=$(curl -s "https://fill.papermc.io/v3/projects/paper/versions/$MC_VERSION/builds/$BUILD" -H "Accept: application/json")
+JAR_URL=$(echo "$DOWNLOAD_INFO" | jq -r '.downloads["server:default"].url')
 
 log "  Versione: $MC_VERSION, Build: $BUILD"
 curl -fsSL "$JAR_URL" -o "$JAR_NAME"
@@ -57,33 +62,33 @@ log "  Scaricato: $JAR_NAME"
 log "Scarico plugin essenziali..."
 cd "$MC_DIR/plugins"
 
+# URL testati e funzionanti (aggiornare se cambiano)
+# Nota: LuckPerms e CoreProtect scaricati manualmente se necessario
 declare -A PLUGINS=(
-  # Geyser + Floodgate (Bedrock cross-play)
+  # Geyser + Floodgate (Bedrock cross-play) - FUNZIONANO
   ["Geyser-Spigot.jar"]="https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot"
   ["floodgate-spigot.jar"]="https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot"
 
-  # Version support (1.8-1.21.x)
-  ["ViaVersion.jar"]="https://hangar.papermc.io/api/v1/projects/ViaVersion/ViaVersion/versions/latest/PAPER/download"
-  ["ViaRewind.jar"]="https://hangar.papermc.io/api/v1/projects/ViaVersion/ViaRewind/versions/latest/PAPER/download"
-  ["ViaBackwards.jar"]="https://hangar.papermc.io/api/v1/projects/ViaVersion/ViaBackwards/versions/latest/PAPER/download"
+  # Version support (1.8-1.21.x) - via Hangar CDN
+  ["ViaVersion.jar"]="https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.12.2/PAPER/ViaVersion-5.12.2.jar"
+  ["ViaRewind.jar"]="https://hangarcdn.papermc.io/plugins/ViaVersion/ViaRewind/versions/4.2.0/PAPER/ViaRewind-4.2.0.jar"
+  ["ViaBackwards.jar"]="https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.12.2/PAPER/ViaBackwards-5.12.2.jar"
 
-  # Essenziali
-  ["EssentialsX.jar"]="https://ci.essentialsx.net/job/EssentialsX/lastSuccessfulBuild/artifact/EssentialsX-Essentials/target/EssentialsX-*-SNAPSHOT.jar"
-  ["EssentialsXChat.jar"]="https://ci.essentialsx.net/job/EssentialsX/lastSuccessfulBuild/artifact/EssentialsX-EssentialsXChat/target/EssentialsXChat-*-SNAPSHOT.jar"
-  ["EssentialsXSpawn.jar"]="https://ci.essentialsx.net/job/EssentialsX/lastSuccessfulBuild/artifact/EssentialsX-EssentialsXSpawn/target/EssentialsXSpawn-*-SNAPSHOT.jar"
+  # EssentialsX - GitHub releases
+  ["EssentialsX.jar"]="https://github.com/EssentialsX/Essentials/releases/download/2.22.0/EssentialsX-2.22.0.jar"
+  ["EssentialsXChat.jar"]="https://github.com/EssentialsX/Essentials/releases/download/2.22.0/EssentialsXChat-2.22.0.jar"
+  ["EssentialsXSpawn.jar"]="https://github.com/EssentialsX/Essentials/releases/download/2.22.0/EssentialsXSpawn-2.22.0.jar"
 
-  # Permessi
-  ["LuckPerms.jar"]="https://download.luckperms.net/1685/bukkit/loader/LuckPerms-Bukkit-5.4.130.jar"
-
-  # Protezione/rollback
-  ["CoreProtect.jar"]="https://ci.coreprotect.net/job/CoreProtect/lastSuccessfulBuild/artifact/target/CoreProtect-*-SNAPSHOT.jar"
-
-  # World edit
+  # WorldEdit - BukkitDev
   ["WorldEdit.jar"]="https://dev.bukkit.org/projects/worldedit/files/latest"
 
-  # Profiling/performance
-  ["Spark.jar"]="https://ci.lucko.me/job/Spark/lastSuccessfulBuild/artifact/spark-bukkit/target/spark-*-SNAPSHOT.jar"
+  # Spark - profiler
+  ["Spark.jar"]="https://ci.lucko.me/job/Spark/lastSuccessfulBuild/artifact/spark-bukkit/build/libs/spark-1.10.196-bukkit.jar"
 )
+
+# Plugin opzionali (da installare manualmente se necessario)
+# LuckPerms: https://luckperms.net/downloads
+# CoreProtect: https://coreprotect.net/download.php
 
 for plugin in "${!PLUGINS[@]}"; do
   url="${PLUGINS[$plugin]}"
@@ -479,12 +484,14 @@ alias mc-version='cat $HOME/minecraft-server/paper.jar 2>/dev/null | strings | g
 ALIAS_EOF
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Tailscale
+# Tailscale (installa se manca)
 if [[ "$TAILSCALE_ENABLED" == true ]]; then
   log "Configuro Tailscale..."
   if ! command -v tailscale >/dev/null 2>&1; then
-    warn "Tailscale non installato. Installa con: curl -fsSL https://tailscale.com/install.sh | sh"
-  else
+    log "Installa Tailscale..."
+    curl -fsSL https://tailscale.com/install.sh | sh
+  fi
+  if command -v tailscale >/dev/null 2>&1; then
     TAILSCALE_IP=$(tailscale ip -4 2>/dev/null || echo "non connesso")
     log "Tailscale IP: $TAILSCALE_IP"
     echo ""
@@ -496,6 +503,8 @@ if [[ "$TAILSCALE_ENABLED" == true ]]; then
     echo "  1. Installare Tailscale"
     echo "  2. Accedere alla tua tailnet (invitali da admin console)"
     echo "  3. Connettersi con gli IP sopra"
+  else
+    warn "Tailscale install fallito. Installa manualmente: curl -fsSL https://tailscale.com/install.sh | sh"
   fi
 fi
 
