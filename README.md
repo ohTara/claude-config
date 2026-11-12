@@ -2,6 +2,21 @@
 
 Configurazione personale per [Claude Code](https://claude.com/claude-code) — sincronizzata tra Windows (VM ITS) e Linux (Pop!_OS).
 
+---
+
+## 📍 Due Percorsi / Two Repositories
+
+| Repository | Scopo | URL |
+|---|---|---|
+| **ohTara/claude-config** ← **QUESTO** | Config completa: Pop!_OS installer, memory, RTK, 17 repo aggiunti | `https://github.com/ohTara/claude-config.git` |
+| **Alishahryar1/free-claude-code** | Upstream base: progetto Python con CI/tests | `https://github.com/Alishahryar1/free-claude-code.git` |
+
+**Usa `ohTara/claude-config` per il setup reale.** L'altro repo è l'upstream di partenza.
+
+---
+
+## Contenuto
+
 ## Contenuto
 
 ```
