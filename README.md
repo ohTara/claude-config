@@ -1,139 +1,101 @@
-# free-claude-code
+# claude-config
 
-Claude Code configuration and setup for Pop!_OS development environment.
+Configurazione personale per [Claude Code](https://claude.com/claude-code) — sincronizzata tra Windows (VM ITS) e Linux (Pop!_OS).
 
----
+## Contenuto
 
-## 📍 Due Percorsi / Two Repositories
+```
+.claude/
+├── CLAUDE.md              # Istruzioni globali (override default behavior)
+├── RTK.md                 # Rust Token Killer - CLI proxy per risparmio token
+├── install-popos.sh       # Setup completo ambiente Dev/Cloud su Pop!_OS
+└── projects/
+    └── C--Users-luca-tarallo/
+        └── memory/
+            ├── MEMORY.md                      # Indice ricordi
+            ├── preferenze-sviluppo.md         # Stack: Windows/Ubuntu, AWS/Azure/GCP, Terraform, k8s, Podman
+            ├── configurazione-homeserver.md   # ASUS Vivobook headless: SSH, UFW, fail2ban, Samba, Jellyfin, Minecraft
+            └── guida-sistema-e-troubleshooting.md  # Diagnostica accesso Jellyfin, Podman logs, Samba
+```
 
-| Repository | Scopo | URL |
-|---|---|---|
-| **ohTara/claude-config** ← **LA TUA CONFIG** | Config completa: Pop!_OS installer, memory, RTK, 17 repo aggiunti | `https://github.com/ohTara/claude-config.git` |
-| **Alishahryar1/free-claude-code** | Upstream base: progetto Python con CI/tests | `https://github.com/Alishahryar1/free-claude-code.git` |
-
-**Usa `ohTara/claude-config` per il setup reale.** Questo repo (`free-claude-code`) è l'upstream di partenza.
-
----
-
-## Quick Start on Pop!_OS (da ohTara/claude-config)
+## Setup rapido
 
 ```bash
-# Clona LA TUA config
-git clone https://github.com/ohTara/claude-config.git
-cd claude-config
+# Clona nella posizione attesa da Claude Code
+git clone https://github.com/ohTara/claude-config.git ~/.claude
+
+# Verifica
+ls ~/.claude/
+claude --version
+```
+
+## Setup ambiente Pop!_OS (nuova macchina)
+
+```bash
+# Rendi eseguibile e lancia lo script di installazione
+cd ~/.claude
+chmod +x install-popos.sh
 ./install-popos.sh
 ```
 
-Lo script installa lo stack Dev/Cloud completo:
-- **RTK** (Rust Token Killer) — token-optimized CLI proxy
-- **Node-RED** — flow-based development
-- **Terraform** — infrastructure as code
-- **Ansible** — automation
-- **Cloud CLIs**: Azure CLI, AWS CLI, GCP CLI
-- **Kubernetes**: kubectl, Helm
-- **Containers**: Podman, Docker
-- **+ 17 repo aggiuntivi** per potenziare Claude Code
+Lo script installa:
+- **Rust + Cargo** → per RTK
+- **RTK** (Rust Token Killer) — proxy CLI che taglia ~90% output bash
+- **Node.js LTS + npm** — per Node-RED e tool JS
+- **Node-RED** — editor flow IoT (porta 1880)
+- **Podman** — container rootless (già su Pop!_OS)
+- **Docker** (opzionale) — compatibilità
+- **Terraform** — IaC (HashiCorp repo)
+- **Ansible** — config management
+- **Azure CLI** (`az`) — cloud Microsoft
+- **AWS CLI v2** — cloud Amazon
+- **Google Cloud CLI** (`gcloud`) — cloud Google
+- **kubectl** — Kubernetes CLI
+- **Helm** — package manager k8s
+- **Git** + chiave SSH ed25519 per GitHub
 
----
+## Memory system
 
-## RTK — Rust Token Killer
+I file in `projects/*/memory/` sono **caricati automaticamente** all'avvio di Claude Code. Contengono:
+- Preferenze e stack tecnologico
+- Configurazione homeserver (servizi, porte, troubleshooting)
+- Riferimenti a progetti ITS (27 moduli + Omnia System DevSecOps lab)
 
-RTK cuts up to 90% of bash output tokens in Claude Code.
+## Nota sui path
 
-### Meta Commands (always use `rtk` directly)
+La cartella `C--Users-luca-tarallo` è un hash del path Windows originale. Funziona identicamente su Linux — Claude Code usa il contenuto, non il nome.
 
-```bash
-rtk gain              # Show token savings analytics
-rtk gain --history    # Show command usage history with savings
-rtk discover          # Analyze Claude Code history for missed opportunities
-rtk proxy <cmd>       # Execute raw command without filtering (for debugging)
-```
-
-### Installation Verification
-
-```bash
-rtk --version         # Should show: rtk X.Y.Z
-rtk gain              # Should work (not "command not found")
-which rtk             # Verify correct binary
-```
-
-⚠️ **Name collision**: If `rtk gain` fails, you may have `reachingforthejack/rtk` (Rust Type Kit) installed instead of Rust Token Killer.
-
-### Hook-Based Usage
-
-All other commands are automatically rewritten by the Claude Code hook:
+## Sync futuri
 
 ```bash
-git status     # → rtk git status (transparent, 0 tokens overhead)
-ls -la         # → rtk ls -la
-<any command>  # → rtk <command>
+# Dopo modifiche su una macchina:
+cd ~/.claude
+git add -A
+git commit -m "Update: <cosa>"
+git push
+
+# Sull'altra macchina:
+cd ~/.claude && git pull
 ```
 
-Refer to [RTK.md](RTK.md) for full command reference.
-
----
-
-## Project Structure (ohTara/claude-config)
-
-```
-claude-config/
-├── CLAUDE.md              # Behavioral guidelines for coding tasks
-├── RTK.md                 # RTK documentation
-├── install-popos.sh       # Pop!_OS setup script (235 lines)
-├── README.md              # This file
-├── .claude/
-│   ├── settings.json      # Claude Code settings (hooks, permissions)
-│   └── CLAUDE.md          # User-global instructions
-└── projects/              # Memory files per project
-    ├── C--Users-luca-tarallo/
-    │   └── memory/
-    │       ├── MEMORY.md
-    │       ├── configurazione-homeserver.md
-    │       ├── guida-sistema-e-troubleshooting.md
-    │       └── preferenze-sviluppo.md
-    └── -home-tara--claude-projects/
-        └── memory/
-            └── MEMORY.md
-```
-
----
-
-## Claude Code Configuration (da ohTara/claude-config)
-
-Questa config include:
-- **Hooks** per automatic RTK command rewriting
-- **Permissions** allowlist per operazioni read-only comuni
-- **Global instructions** (CLAUDE.md) con coding guidelines
-- **Memory system** persistente tra sessioni
-
----
-
-## Useful Commands
+## Verifica post-install
 
 ```bash
-# Check RTK savings
+# Test RTK
+rtk --version
 rtk gain
 
-# See what commands could have used RTK
-rtk discover
+# Test Node-RED
+node-red  # Ctrl+C per uscire, gira su http://localhost:1880
 
-# Debug: run command without RTK filtering
-rtk proxy git log --oneline -10
+# Test cloud CLI
+az version
+aws --version
+gcloud version
+kubectl version --client
+helm version --short
 ```
 
 ---
 
-## Sync con Upstream (se serve)
-
-```bash
-# In free-claude-code
-git remote add upstream https://github.com/Alishahryar1/free-claude-code.git
-git fetch upstream
-git merge upstream/main --allow-unrelated-histories  # se history divergenti
-```
-
----
-
-## License
-
-MIT
+**Licenza:** Uso personale — niente segreti/chiavi in repo (usa variabili d'ambiente o keyring).
