@@ -234,3 +234,42 @@ echo "  1. git clone https://github.com/TUO-USERNAME/claude-config.git ~/.claude
 echo "  2. claude  # primo avvio, farà login browser"
 echo "  3. rtk gain  # verifica RTK"
 echo "  4. node-red  # test Node-RED (poi Ctrl+C, gira su porta 1880)"
+# ──────────────────────────────────────────────────────────────────────────────
+# Clone 18 repo extra per potenziare Claude Code
+log "Clonazione repo extra per Claude Code..."
+mkdir -p ~/claude-repos
+cd ~/claude-repos
+
+repos=(
+  "https://github.com/centminmod/my-claude-code-setup.git"
+  "https://github.com/rse/claude-code-setup.git"
+  "https://github.com/alexandrosnt/Reach.git"
+  "https://github.com/thedotmack/claude-mem.git"
+  "https://github.com/usestrix/strix.git"
+  "https://github.com/multica-ai/multica.git"
+  "https://github.com/Panniantong/Agent-Reach.git"
+  "https://github.com/NVIDIA/SkillSpector.git"
+  "https://github.com/ruvnet/ruflo.git"
+  "https://github.com/open-jarvis/OpenJarvis.git"
+  "https://github.com/multica-ai/andrej-karpathy-skills.git"
+  "https://github.com/nyldn/claude-octopus.git"
+  "https://github.com/Graphify-Labs/graphify.git"
+  "https://github.com/obra/superpowers.git"
+  "https://github.com/storytold/craft-anything.git"
+  "https://github.com/DietrichGebert/ponytail.git"
+  "https://github.com/tashfeenahmed/freellmapi.git"
+  "https://github.com/lemomo-ai/lemo-opuscar.git"
+)
+
+for repo in "${repos[@]}"; do
+  name=$(basename "$repo" .git)
+  if [[ -d "$name" ]]; then
+    log "  $name già presente, aggiorno..."
+    git -C "$name" pull
+  else
+    log "  Clono $name..."
+    git clone "$repo"
+  fi
+done
+
+log "Repo extra clonati in ~/claude-repos/"
