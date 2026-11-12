@@ -273,3 +273,14 @@ for repo in "${repos[@]}"; do
 done
 
 log "Repo extra clonati in ~/claude-repos/"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Minecraft Server (opzionale)
+log "Setup Minecraft Server (opzionale)..."
+if [[ -f "$HOME/.claude/install-mc-server.sh" ]]; then
+  log "  Script trovato: $HOME/.claude/install-mc-server.sh"
+  log "  Per installare: chmod +x \$HOME/.claude/install-mc-server.sh && \$HOME/.claude/install-mc-server.sh"
+  log "  Opzionale backup cloud: BACKUP_REMOTE=\"gdrive:mc-backups\" \$HOME/.claude/install-mc-server.sh"
+else
+  warn "  Script install-mc-server.sh non trovato in ~/.claude/"
+fi
