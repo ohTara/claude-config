@@ -17,3 +17,18 @@ roster.json
 # OS
 .DS_Store
 Thumbs.db
+projects/
+paste-cache/
+cache/
+jobs/
+sessions/
+shell-snapshots/
+telemetry/
+templates/
+plugins/
+daemon.status.json
+history.jsonl
+settings.json
+settings.json.bak
+.last-cleanup
+.last-update-result.json
