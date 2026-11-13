@@ -1,235 +1,80 @@
 # claude-config
 
-Configurazione personale per [Claude Code](https://claude.com/claude-code) — sincronizzata tra Windows (VM ITS) e Linux (Pop!_OS).
-
----
-
-## 📍 Due Percorsi / Two Repositories
-
-| Repository | Scopo | URL |
-|---|---|---|
-| **ohTara/claude-config** ← **QUESTO** | Config completa: Pop!_OS installer, memory, RTK, 17 repo aggiunti | `https://github.com/ohTara/claude-config.git` |
-| **Alishahryar1/free-claude-code** | Upstream base: progetto Python con CI/tests | `https://github.com/Alishahryar1/free-claude-code.git` |
-
-**Usa `ohTara/claude-config` per il setup reale.** L'altro repo è l'upstream di partenza.
-
----
+Configurazione personale di [Claude Code](https://claude.com/claude-code), sincronizzata tra Windows e Linux (Pop!_OS). Si clona direttamente in `~/.claude`.
 
 ## Contenuto
 
 ```
-.claude/
-├── CLAUDE.md              # Istruzioni globali (override default behavior)
-├── RTK.md                 # Rust Token Killer - CLI proxy per risparmio token
-├── install-popos.sh       # Setup completo ambiente Dev/Cloud su Pop!_OS (+ 18 repo extra)
-└── projects/
-    └── C--Users-luca-tarallo/
-        └── memory/
-            ├── MEMORY.md                      # Indice ricordi
-            ├── preferenze-sviluppo.md         # Stack: Windows/Ubuntu, AWS/Azure/GCP, Terraform, k8s, Podman
-            ├── configurazione-homeserver.md   # ASUS Vivobook headless: SSH, UFW, fail2ban, Samba, Jellyfin, Minecraft
-            └── guida-sistema-e-troubleshooting.md  # Diagnostica accesso Jellyfin, Podman logs, Samba
+~/.claude/
+├── CLAUDE.md                  # Istruzioni globali: importa RTK.md e la memory
+├── RTK.md                     # Uso di RTK (Rust Token Killer)
+├── memory/                    # Ricordi persistenti, validi su ogni macchina
+│   ├── MEMORY.md              #   indice
+│   ├── preferenze-sviluppo.md #   macchine, stack, stile di spiegazione
+│   ├── progetti-its.md        #   Omnia System, Sage, Echoes of the Crypt, Materie_ITS
+│   ├── server-wtmemmico.md    #   server Minecraft attuale
+│   ├── homelab-vivobook.md    #   vecchio homeserver ≤2 GB
+│   └── troubleshooting-jellyfin.md
+├── settings/                  # Modelli di settings.json (Linux e Windows)
+├── install-popos.sh           # Ambiente Dev/Cloud su Pop!_OS / Ubuntu
+├── install-mc-server.sh       # Server Minecraft PaperMC + Geyser (Linux)
+└── scripts/
+    ├── install-windows.ps1    # Ambiente Dev/Cloud su Windows + Free Claude Code
+    ├── install-mc-server.ps1  # Server Minecraft (Windows)
+    └── install-muse.ps1, uninstall-muse.ps1
 ```
 
-## Repo extra clonati da `install-popos.sh` (in `~/claude-repos/`)
-
-1. [my-claude-code-setup](https://github.com/centminmod/my-claude-code-setup.git)
-2. [claude-code-setup](https://github.com/rse/claude-code-setup.git)
-3. [Reach](https://github.com/alexandrosnt/Reach.git)
-4. [claude-mem](https://github.com/thedotmack/claude-mem.git)
-5. [strix](https://github.com/usestrix/strix.git)
-6. [multica](https://github.com/multica-ai/multica.git)
-7. [Agent-Reach](https://github.com/Panniantong/Agent-Reach.git)
-8. [SkillSpector](https://github.com/NVIDIA/SkillSpector.git)
-9. [ruflo](https://github.com/ruvnet/ruflo.git)
-10. [OpenJarvis](https://github.com/open-jarvis/OpenJarvis.git)
-11. [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills.git)
-12. [claude-octopus](https://github.com/nyldn/claude-octopus.git)
-13. [graphify](https://github.com/Graphify-Labs/graphify.git)
-14. [superpowers](https://github.com/obra/superpowers.git)
-15. [craft-anything](https://github.com/storytold/craft-anything.git)
-16. [ponytail](https://github.com/DietrichGebert/ponytail.git)
-17. [freellmapi](https://github.com/tashfeenahmed/freellmapi.git)
-18. [lemo-opuscar](https://github.com/lemomo-ai/lemo-opuscar.git)
-
-## Setup rapido
+## Setup
 
 ```bash
-# Clona nella posizione attesa da Claude Code
 git clone https://github.com/ohTara/claude-config.git ~/.claude
-
-# Verifica
-ls ~/.claude/
-claude --version
-```
-
-## Setup ambiente Pop!_OS (nuova macchina)
-
-```bash
-# Rendi eseguibile e lancia lo script di installazione
 cd ~/.claude
-chmod +x install-popos.sh
-./install-popos.sh
 ```
 
-Lo script installa:
-- **Rust + Cargo** → per RTK
-- **RTK** (Rust Token Killer) — proxy CLI che taglia ~90% output bash
-- **Node.js LTS + npm** — per Node-RED e tool JS
-- **Node-RED** — editor flow IoT (porta 1880)
-- **Podman** — container rootless (già su Pop!_OS)
-- **Docker** (opzionale) — compatibilità
-- **Terraform** — IaC (HashiCorp repo)
-- **Ansible** — config management
-- **Azure CLI** (`az`) — cloud Microsoft
-- **AWS CLI v2** — cloud Amazon
-- **Google Cloud CLI** (`gcloud`) — cloud Google
-- **kubectl** — Kubernetes CLI
-- **Helm** — package manager k8s
-- **Git** + chiave SSH ed25519 per GitHub
-
-## Memory system
-
-I file in `projects/*/memory/` sono **caricati automaticamente** all'avvio di Claude Code. Contengono:
-- Preferenze e stack tecnologico
-- Configurazione homeserver (servizi, porte, troubleshooting)
-- Riferimenti a progetti ITS (27 moduli + Omnia System DevSecOps lab)
-
-## Nota sui path
-
-La cartella `C--Users-luca-tarallo` è un hash del path Windows originale. Funziona identicamente su Linux — Claude Code usa il contenuto, non il nome.
-
-## Sync futuri
-
-```bash
-# Dopo modifiche su una macchina:
-cd ~/.claude
-git add -A
-git commit -m "Update: <cosa>"
-git push
-
-# Sull'altra macchina:
-cd ~/.claude && git pull
-```
-
-## Verifica post-install
-
-```bash
-# Test RTK
-rtk --version
-rtk gain
-
-# Test Node-RED
-node-red  # Ctrl+C per uscire, gira su http://localhost:1880
-
-# Test cloud CLI
-az version
-aws --version
-gcloud version
-kubectl version --client
-helm version --short
-```
-
----
-
-## 🎮 Minecraft Server (PaperMC + Geyser)
-
-Installazione completa per **Java + Bedrock cross-play**, 30 giocatori, vanilla+modded, esposto via Tailscale.
-
-### Avvio rapido
-
-```bash
-cd ~/.claude
-chmod +x install-mc-server.sh
-./install-mc-server.sh
-```
-
-### Cosa installa
-
-- **PaperMC 1.21.11** (build 34) — fork ad alte prestazioni
-- **Geyser + Floodgate** — Bedrock cross-play (nessun account Java necessario)
-- **ViaVersion/ViaRewind/ViaBackwards** — supporto client 1.8–1.21.x
-- **EssentialsX** (Core, Chat, Spawn) — comandi base, home, spawn, economy
-- **Spark** — profiler performance integrato
-- **WorldEdit** — world editing (opzionale, richiede Java 25+ per build recenti)
-- **LuckPerms / CoreProtect** — opzionali, installazione manuale
-
-### Configurazione sistema
-
-| Componente | Dettagli |
+| Macchina | Comando |
 |---|---|
-| **RAM** | 6 GB heap (Aikar G1GC flags) |
-| **Java** | OpenJDK 21 (headless) |
-| **Servizio** | systemd user service (`mc-server`) |
-| **Backup** | Script `mc-backup` con rotazione + rclone (local + cloud) |
-| **Rete** | Porta 25565 (Java) + 19132 UDP (Bedrock), Tailscale auto |
-| **Online mode** | `false` (offline/insecure — cambia in server.properties) |
+| Pop!_OS / Ubuntu | `./install-popos.sh` |
+| Windows | `./scripts/install-windows.ps1 -RtkHeadroom` |
 
-### Comandi (alias in `~/.bashrc`)
+Poi, su entrambe:
 
 ```bash
-mc-start        # Avvia server
-mc-stop         # Ferma server (graceful, 60s timeout)
-mc-restart      # Riavvia
-mc-status       # Stato systemd
-mc-logs         # Log live (journalctl)
-mc-console      # Console interattiva (rcon via screen/tmux)
-mc-backup       # Backup manuale (world + config + plugins)
-mc-backup-list  # Lista backup locali
-mc-version      # Versione PaperMC
+cp settings/settings.linux.json settings.json   # su Windows: settings.windows.json
+rtk init -g --dry-run                            # anteprima delle modifiche
+rtk init -g                                      # collega RTK a Claude Code
+rtk gain                                         # deve mostrare le statistiche
 ```
 
-### Tailscale / Accesso remoto
+## Memory
+
+Claude Code salva la memory automatica in `projects/<percorso-della-cartella>/memory/`. Il nome di quella cartella dipende dal percorso in cui lavori (`C--Users-luca-tarallo` su Windows, un altro su Linux), quindi i ricordi salvati lì **non si ritrovano sull'altra macchina**.
+
+Per questo i ricordi stanno in `memory/` e vengono importati da `CLAUDE.md` con `@memory/<file>.md`: `CLAUDE.md` è globale e viene letto ovunque. Per aggiungerne uno, vedi `memory/MEMORY.md`.
+
+`projects/` resta fuori da Git: contiene le trascrizioni delle sessioni.
+
+## Cosa installa `install-popos.sh`
+
+RTK, Node.js LTS, Node-RED (porta 1880), Podman rootless, Docker (opzionale), Terraform, Ansible, Azure CLI, AWS CLI v2, Google Cloud CLI, kubectl, Helm, Git con chiave SSH ed25519.
+
+RTK viene installato con l'installer ufficiale di [rtk-ai/rtk](https://github.com/rtk-ai/rtk). `cargo install rtk` installerebbe un altro progetto con lo stesso nome.
+
+Alla fine lo script clona in `~/claude-repos/` 18 repository di riferimento (skill, setup e strumenti per Claude Code). Sono materiale da consultare: Claude Code non li carica da solo.
+
+## Free Claude Code (solo Windows)
+
+`install-windows.ps1` installa anche [Free Claude Code](https://github.com/Alishahryar1/free-claude-code) e i launcher `fcc-claude`, `fcc-codex`, `fcc-opencode`, `fcc-pi`, `fcc-cline`, `fcc-hermes`, `fcc-dsh`, `fcc-grok`, `fcc-muse`, `fcc-aider`, `fcc-agy`. Il sorgente di quel progetto non è più copiato in questa repo: l'installer lo scarica dalla release ufficiale.
+
+Gli script in `scripts/` derivano da quel progetto, distribuito con licenza AGPL-3.0 (vedi `LICENSE`).
+
+## Server Minecraft
+
+`install-mc-server.sh` è lo stesso script di [Server_WTMemmico](https://github.com/ohTara/Server_WTMemmico), dove si trova la documentazione completa. Si può rilanciare per aggiornare PaperMC e i plugin: non sovrascrive `server.properties`, `paper.yml` e la configurazione di Geyser se esistono già.
+
+## Sincronizzazione
 
 ```bash
-# Dopo install, Tailscale si connette automaticamente
-tailscale up
-tailscale ip -4  # Mostra IP per connessione Bedrock/Java
-
-# Condividi IP con amici → si connettono via Tailscale IP:25565 (Java) o :19132 (Bedrock)
+cd ~/.claude
+git add -A && git commit -m "chore: <cosa è cambiato>" && git push   # macchina modificata
+git pull                                                             # altra macchina
 ```
-
-### Backup & Restore
-
-```bash
-# Backup automatico: cron giornaliero alle 03:00 (vedi mc-backup script)
-# Backup manuale:
-mc-backup
-
-# Restore:
-# 1. mc-stop
-# 2. Estrai backup in ~/minecraft-server/
-# 3. mc-start
-
-# Cloud backup (configura rclone remote):
-rclone config  # Crea remote "mc-backups"
-# Lo script usa rclone copy ~/minecraft-server/backups/ mc-backups:minecraft/
-```
-
-### Plugin opzionali (installazione manuale)
-
-```bash
-cd ~/minecraft-server/plugins
-
-# LuckPerms (permessi avanzati)
-wget https://download.luckperms.net/1685/bukkit/loader/LuckPerms-Bukkit-5.4.130.jar
-
-# CoreProtect (rollback/protezione)
-wget https://ci.coreprotect.net/job/CoreProtect/lastSuccessfulBuild/artifact/target/CoreProtect-*-SNAPSHOT.jar
-
-# Poi: mc-restart
-```
-
-### Troubleshooting
-
-| Problema | Soluzione |
-|---|---|
-| Server crash all'avvio | `journalctl --user -u mc-server -f` |
-| Geyser "zip file closed" | Bug noto restart race condition → `mc-restart` risolve |
-| WorldEdit error Java version | Build recente richiede Java 25+ → usa build compatibile o rimuovi |
-| Bedrock non connette | Verifica porta 19132 UDP + Tailscale IP corretto |
-| Lag / TPS basso | `mc-console` → `spark profiler --timeout 60` → analizza report |
-
----
-
-**Licenza:** Uso personale — niente segreti/chiavi in repo (usa variabili d'ambiente o keyring).

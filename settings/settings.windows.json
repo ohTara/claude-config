@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk:*)",
+      "Bash(podman:*)",
+      "Bash(docker:*)",
+      "Bash(terraform:*)",
+      "Bash(ansible:*)",
+      "Bash(kubectl:*)",
+      "Bash(helm:*)",
+      "Bash(az:*)",
+      "Bash(aws:*)",
+      "Bash(gcloud:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(uv:*)",
+      "Bash(python:*)",
+      "Bash(git:*)"
+    ]
+  },
+  "env": {
+    "RTK_TELEMETRY_DISABLED": "1"
+  }
+}

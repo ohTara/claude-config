@@ -48,14 +48,23 @@ fi
 # RTK (Rust Token Killer)
 if ! command -v rtk &>/dev/null; then
   log "Installazione RTK..."
-  cargo install rtk
-  # Verifica che ~/.cargo/bin sia nel PATH
-  if ! grep -q '$HOME/.cargo/bin' ~/.bashrc 2>/dev/null; then
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-  fi
-  export PATH="$HOME/.cargo/bin:$PATH"
+  # NON usare "cargo install rtk": su crates.io quel nome è un altro progetto
+  # (Rust Type Kit). Si usa l'installer ufficiale di rtk-ai/rtk.
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  for d in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
+    if ! grep -qF "$d" ~/.bashrc 2>/dev/null; then
+      echo "export PATH=\"$d:\$PATH\"" >> ~/.bashrc
+    fi
+    export PATH="$d:$PATH"
+  done
 else
   log "RTK già presente: $(rtk --version)"
+fi
+
+# Controllo anti-omonimia: il vero RTK risponde a "rtk gain"
+if command -v rtk &>/dev/null && ! rtk gain &>/dev/null; then
+  warn "'rtk gain' non funziona: probabilmente è installato l'altro 'rtk' di crates.io."
+  warn "Rimuovilo con 'cargo uninstall rtk' e rilancia questo script."
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -230,9 +239,9 @@ echo
 warn "IMPORTANTE: Riavvia il terminale (o 'source ~/.bashrc') per avere cargo/bin nel PATH"
 echo
 echo "Prossimi passi:"
-echo "  1. git clone https://github.com/TUO-USERNAME/claude-config.git ~/.claude"
+echo "  1. rtk init -g   # collega RTK a Claude Code (anteprima con --dry-run)"
 echo "  2. claude  # primo avvio, farà login browser"
-echo "  3. rtk gain  # verifica RTK"
+echo "  3. rtk gain  # verifica RTK (deve mostrare le statistiche)"
 echo "  4. node-red  # test Node-RED (poi Ctrl+C, gira su porta 1880)"
 # ──────────────────────────────────────────────────────────────────────────────
 # Clone 18 repo extra per potenziare Claude Code

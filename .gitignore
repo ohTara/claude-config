@@ -1,34 +1,43 @@
-# Cache e runtime Claude Code
+# Runtime di Claude Code (diverso su ogni macchina)
 .cache/
 .daemon/
 daemon/
 backups/
-file-history/
-*.pid
-*.log
-*.lock
-control.key
-pty-pids/
-roster.json
-
-# Credenziali
-.credentials.json
-
-# OS
-.DS_Store
-Thumbs.db
-projects/
-paste-cache/
 cache/
+file-history/
 jobs/
+paste-cache/
+plugins/
+pty-pids/
 sessions/
 shell-snapshots/
 telemetry/
 templates/
-plugins/
+todos/
+statsig/
+ide/
+*.pid
+*.log
+*.lock
+control.key
+roster.json
 daemon.status.json
 history.jsonl
-settings.json
-settings.json.bak
 .last-cleanup
 .last-update-result.json
+
+# Trascrizioni delle sessioni: contengono conversazioni e percorsi locali
+projects/
+
+# Impostazioni locali (i modelli sono in settings/)
+settings.json
+settings.json.bak
+settings.local.json
+
+# Credenziali
+.credentials.json
+.claude.json
+
+# OS
+.DS_Store
+Thumbs.db
